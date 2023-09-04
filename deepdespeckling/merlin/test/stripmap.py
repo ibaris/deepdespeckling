@@ -1,15 +1,15 @@
-import torch
-
-from deepdespeckling.merlin.test.model import *
-from deepdespeckling.merlin.test.utils import *
-from deepdespeckling.merlin.test.model_test import *
 import os
-from glob import glob
 import pathlib
+from glob import glob
 from pathlib import Path
 
 import numpy as np
+import torch
+
 from deepdespeckling.merlin.test.load_cosar import cos2mat
+from deepdespeckling.merlin.test.model import *
+from deepdespeckling.merlin.test.model_test import *
+from deepdespeckling.merlin.test.utils import *
 
 M = 10.089038980848645
 m = -1.429329123112601
@@ -18,7 +18,8 @@ this_dir, this_filename = os.path.split(__file__)
 
 
 def despeckle_stripmap(image_path, destination_directory, stride_size=64,
-              model_weights_path=os.path.join(this_dir, "saved_model", "stripmap.pth"), patch_size=256):
+              model_weights_path=os.path.join(this_dir, "saved_model", "stripmap.pth"), patch_size=256,
+              device="cuda:0"):
 
     """ Description
             ----------
@@ -61,7 +62,7 @@ def despeckle_stripmap(image_path, destination_directory, stride_size=64,
     print(test_files)
 
     denoiser.test(test_files, model_weights_path, save_dir=destination_directory,
-                  stride=stride_size, patch_size=patch_size)
+                  stride=stride_size, patch_size=patch_size, device=device)
 
 
 def despeckle_from_coordinates_stripmap(image_path, coordinates_dict, destination_directory, stride_size=64,

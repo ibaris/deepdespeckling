@@ -1,15 +1,15 @@
-import torch
-
-from deepdespeckling.merlin.test.model import *
-from deepdespeckling.merlin.test.utils import *
-from deepdespeckling.merlin.test.model_test import *
 import os
-from glob import glob
 import pathlib
+from glob import glob
 from pathlib import Path
 
 import numpy as np
+import torch
+
 from deepdespeckling.merlin.test.load_cosar import cos2mat
+from deepdespeckling.merlin.test.model import *
+from deepdespeckling.merlin.test.model_test import *
+from deepdespeckling.merlin.test.utils import *
 
 M = 10.089038980848645
 m = -1.429329123112601
@@ -18,7 +18,8 @@ this_dir, this_filename = os.path.split(__file__)
 
 
 def despeckle_spotlight(image_path, destination_directory, stride_size=64,
-                        model_weights_path=os.path.join(this_dir, "saved_model", "spotlight.pth"), patch_size=256):
+                        model_weights_path=os.path.join(this_dir, "saved_model", "spotlight.pth"), patch_size=256,
+                        device="cuda:0"):
     """ Description
             ----------
             Runs a test instance by calling the test function defined in model.py on a few samples
@@ -34,10 +35,10 @@ def despeckle_spotlight(image_path, destination_directory, stride_size=64,
 
     denoiser = Denoiser()
 
-    if not os.path.exists(destination_directory + '/processed_image'):
-        os.mkdir(destination_directory + '/processed_image')
+    test_data = os.path.join(destination_directory, "processed_image")
 
-    test_data = destination_directory + '/processed_image'
+    if not os.path.exists(test_data):
+        os.makedirs(test_data)
 
     filelist = glob(os.path.join(test_data, "*"))
     for f in filelist:
@@ -49,8 +50,9 @@ def despeckle_spotlight(image_path, destination_directory, stride_size=64,
     else:
         image_data = cos2mat(image_path)
 
-    imagename = image_path.split('/')[-1].split('.')[0]
-    np.save(test_data + '/' + imagename +'.npy', image_data)
+    imagename = os.path.basename(image_path)
+    npy_path = os.path.join(test_data, imagename + ".npy")
+    np.save(npy_path, image_data)
 
     print(
         "[*] Start testing on real data. Working directory: %s. Collecting data from %s and storing test results in %s" % (
@@ -58,12 +60,14 @@ def despeckle_spotlight(image_path, destination_directory, stride_size=64,
 
     test_files = glob((test_data + '/*.npy'))
 
-    denoiser.test(test_files, model_weights_path, save_dir=destination_directory,
-                  stride=stride_size, patch_size=patch_size)
+    denoiser.test(test_files, model_weights_path, stride=stride_size, patch_size=patch_size, device=device)
+
+    return destination_directory
 
 
 def despeckle_from_coordinates_spotlight(image_path, coordinates_dict, destination_directory, stride_size=64,
-                                         model_weights_path=os.path.join(this_dir, "saved_model", "spotlight.pth"),
+                                         model_weights_path=os.path.join(
+                                             this_dir, "saved_model", "spotlight.pth"),
                                          patch_size=256):
     """ Description
             ----------
@@ -84,6 +88,7 @@ def despeckle_from_coordinates_spotlight(image_path, coordinates_dict, destinati
     y_end = coordinates_dict["y_end"]
 
     denoiser = Denoiser()
+    denoiser.test(test_files, model_weights_path, stride=stride_size, patch_size=patch_size)
 
     if not os.path.exists(destination_directory + '/processed_image'):
         os.mkdir(destination_directory + '/processed_image')
@@ -101,7 +106,7 @@ def despeckle_from_coordinates_spotlight(image_path, coordinates_dict, destinati
         image_data = cos2mat(image_path)
 
     imagename = image_path.split('/')[-1].split('.')[0]
-    np.save(test_data + '/' + imagename +'.npy', image_data[x_start:x_end, y_start:y_end, :])
+    np.save(test_data + '/' + imagename + '.npy', image_data[x_start:x_end, y_start:y_end, :])
 
     print(
         "[*] Start testing on real data. Working directory: %s. Collecting data from %s and storing test results in %s" % (
@@ -109,8 +114,7 @@ def despeckle_from_coordinates_spotlight(image_path, coordinates_dict, destinati
 
     test_files = glob((test_data + '/*.npy'))
 
-    denoiser.test(test_files, model_weights_path, save_dir=destination_directory,
-                  stride=stride_size, patch_size=patch_size)
+    denoiser.test(test_files, model_weights_path, stride=stride_size, patch_size=patch_size)
 
 
 def despeckle_from_crop_spotlight(image_path, destination_directory, stride_size=64,

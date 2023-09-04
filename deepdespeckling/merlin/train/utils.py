@@ -1,12 +1,12 @@
 import gc
 import os
 import sys
+from glob import glob
 
 import numpy as np
 from PIL import Image
-from scipy import special
-from scipy import signal
-from glob import glob
+from scipy import signal, special
+
 from deepdespeckling.merlin.train.GenerateDataset import GenerateDataset
 
 basedir = '.'
@@ -197,20 +197,30 @@ def save_sar_images(denoised, noisy, imagename, save_dir, groundtruth=None):
         groundtruthfilename = save_dir+"/groundtruth_"+imagename
         groundtruthfilename=groundtruthfilename.replace("\\","")
 
-        np.save(groundtruthfilename,groundtruth)
+        # np.save(groundtruthfilename,groundtruth)
         store_data_and_plot(groundtruth, threshold, groundtruthfilename)
 
-    denoisedfilename = save_dir + "/denoised_" + imagename
+    denoisedfilename = save_dir + "/raw_denoised_" + imagename
+    denoisedfilename_clip = save_dir + "/denoised_" + imagename
     denoisedfilename=denoisedfilename.replace("\\","")
+    denoisedfilename_clip=denoisedfilename_clip.replace("\\","")
 
+    denoised_clip = np.clip(denoised, 0, threshold)
+    denoised_clip = denoised_clip / threshold * 255
+
+    np.save(denoisedfilename_clip, denoised_clip)
     np.save(denoisedfilename, denoised)
-    store_data_and_plot(denoised, threshold, denoisedfilename)
 
-    noisyfilename = save_dir + "/noisy_" + imagename
-    noisyfilename=noisyfilename.replace("\\","")
+    # store_data_and_plot(denoised, threshold, denoisedfilename)
 
-    np.save(noisyfilename, noisy)
-    store_data_and_plot(noisy, threshold, noisyfilename)
+    # noisyfilename = save_dir + "/noisy_" + imagename
+    # noisyfilename=noisyfilename.replace("\\","")
+
+    # np.save(noisyfilename, noisy)
+    # store_data_and_plot(noisy, threshold, noisyfilename)
+
+    return denoisedfilename
+
 
 
 def save_real_imag_images(real_part, imag_part, imagename, save_dir):

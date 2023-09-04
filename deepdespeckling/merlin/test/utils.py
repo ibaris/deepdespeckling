@@ -1,14 +1,12 @@
-import numpy as np
-from PIL import Image
-from scipy import special
-from scipy import signal
-from deepdespeckling.merlin.test.load_cosar import cos2mat
-import cv2
-from PIL import Image
-import numpy as np
-from numpy import asarray
 import os
 
+import cv2
+import numpy as np
+from numpy import asarray
+from PIL import Image
+from scipy import signal, special
+
+from deepdespeckling.merlin.test.load_cosar import cos2mat
 
 # DEFINE PARAMETERS OF SPECKLE AND NORMALIZATION FACTOR
 M = 10.089038980848645
@@ -164,33 +162,20 @@ def store_data_and_plot(im, threshold, filename):
     return filename
 
 
-def save_sar_images(denoised, noisy, imagename, save_dir, groundtruth=None):
-    choices = {'marais1': 190.92, 'marais2': 168.49, 'saclay': 470.92, 'lely': 235.90, 'ramb': 167.22,
-               'risoul': 306.94, 'limagne': 178.43, 'saintgervais': 560, 'Serreponcon': 450.0,
-               'Sendai': 600.0, 'Paris': 1291.0, 'Berlin': 1036.0, 'Bergen': 553.71,
-               'SDP_Lambesc': 349.53, 'Grand_Canyon': 287.0, 'domancy': 560, 'Brazil': 103.0}
-    threshold = None
-    for x in choices:
-        if x in imagename:
-            threshold = choices.get(x)
-    if threshold is None: threshold = np.mean(noisy) + 3 * np.std(noisy)
+def save_sar_images(denoised, noisy, imagename, save_dir):
+    threshold = np.mean(noisy) + 3 * np.std(noisy)
 
     ####
     imagename = imagename.split('\\')[-1]
     ####
 
-    if groundtruth:
-        groundtruthfilename = save_dir + "/groundtruth_" + imagename
-        np.save(groundtruthfilename, groundtruth)
-        store_data_and_plot(groundtruth, threshold, groundtruthfilename)
-
-    denoisedfilename = save_dir + "/denoised_" + imagename
+    denoisedfilename = save_dir + "/raw_denoised_" + imagename
     np.save(denoisedfilename, denoised)
-    store_data_and_plot(denoised, threshold, denoisedfilename)
 
-    noisyfilename = save_dir + "/noisy_" + imagename
-    np.save(noisyfilename, noisy)
-    store_data_and_plot(noisy, threshold, noisyfilename)
+    denoisedfilename_clip = save_dir + "/denoised_" + imagename
+    denoised_clip = np.clip(denoised, 0, threshold)
+    denoised_clip = denoised_clip / threshold * 255
+    np.save(denoisedfilename_clip, denoised_clip)
 
 
 def save_real_imag_images(noisy, real_part, imag_part, imagename, save_dir):
